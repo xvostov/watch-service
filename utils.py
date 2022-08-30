@@ -1,6 +1,5 @@
 import requests
 from loguru import logger
-from PIL import ImageFile
 
 import time
 
