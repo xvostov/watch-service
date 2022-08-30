@@ -62,8 +62,13 @@ class WatchScraper:
         else:
             logger.debug(f'Title was found: {offer.title}')
 
-        offer.price = re.search(r'цена:* [a-z0-9\s\.\$]*', message_body.text.lower()).group(0).strip()
-        logger.debug(f'Price was found: {offer.price}')
+        try:
+            offer.price = re.search(r'цена:* [a-z0-9\s\.\$]*', message_body.text.lower()).group(0).strip()
+        except AttributeError:
+            logger.warning('Price was not found')
+            raise UnsuitableProductError
+        else:
+            logger.debug(f'Price was found: {offer.price}')
 
         offer.description = message_body.text.replace('\n\n', '\n')
         if len(offer.description) > 650:
