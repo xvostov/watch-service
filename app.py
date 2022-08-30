@@ -1,5 +1,4 @@
 import time
-import test_env
 
 from watch import WatchScraper, UnsuitableProductError
 from loader import db_handler
