@@ -87,12 +87,13 @@ class WatchScraper:
                     offer.price = re.search(r'цена:\s[a-z0-9\s\.\$]*', post.text.lower()).group(0).strip()
                 except AttributeError:
                     logger.debug('Price was not found')
+                    offer.price = ''
 
                 else:
                     logger.debug(f'Price was found: {offer.price}')
 
                 # Описание
-                offer.description = post.text.replace('\n\n', '\n')
+                offer.description = post.text.replace('\n\n', '\n').strip()
                 if len(offer.description) > 650:
                     offer.description = offer.description[:650]
 
