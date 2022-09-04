@@ -107,6 +107,8 @@ class WatchScraper:
                 else:
                     db_handler.add_to_viewed_id(post_id)
 
+            else:
+                logger.debug(f'{post_id} was found in db, message will be skipped')
 def main():
     watch = WatchScraper()
     urls_list = watch.get_offers_urls('http://forum.watch.ru/forumdisplay.php?f=192&order=desc')
