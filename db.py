@@ -19,7 +19,7 @@ class DataBaseHandler:
         # Проверка и создание отсутствующих таблицы
         logger.debug('Checking the om "watch_viewed_ids" table')
         self.mysql_cursor.execute("""
-        CREATE TABLE IF NOT EXISTS watch_viewed_links (
+        CREATE TABLE IF NOT EXISTS watch_viewed_ids (
         url	VARCHAR(200) NOT NULL UNIQUE)""")
 
         logger.debug(f'Checking the om {categories_table} table')
