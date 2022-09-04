@@ -53,9 +53,8 @@ class WatchScraper:
         content = self.req.get(url)
         soup = BeautifulSoup(content, 'lxml')
 
-        viewed_ids = db_handler.get_viewed_links()
+        viewed_ids = db_handler.get_viewed_ids()
 
-        # offer = Offer(url)
         page_title = soup.find('title').text.replace(' - Часовой форум Watch.ru', '')
         all_posts = soup.find_all('td', {'id': re.compile(r'^td_post_')})
 
@@ -81,6 +80,7 @@ class WatchScraper:
             post_id = post.get('id').replace('td_post_', '')
             if post_id not in viewed_ids:
                 offer = Offer(url)
+                offer.title = page_title
 
                 # Поиск цены
                 try:
