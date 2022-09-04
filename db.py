@@ -17,7 +17,7 @@ class DataBaseHandler:
         self.mysql_connection.autocommit(True)
 
         # Проверка и создание отсутствующих таблицы
-        logger.debug('Checking the om "watch_viewed_links" table')
+        logger.debug('Checking the om "watch_viewed_ids" table')
         self.mysql_cursor.execute("""
         CREATE TABLE IF NOT EXISTS watch_viewed_links (
         url	VARCHAR(200) NOT NULL UNIQUE)""")
@@ -27,27 +27,25 @@ class DataBaseHandler:
         CREATE TABLE IF NOT EXISTS {categories_table} (
         url	VARCHAR(255) NOT NULL UNIQUE)""")
 
-
-
-    def get_viewed_links(self) -> List:
+    def get_viewed_ids(self) -> List:
         logger.debug('Getting viewed links')
         while True:
             try:
-                self.mysql_cursor.execute("SELECT url FROM watch_viewed_links")
+                self.mysql_cursor.execute("SELECT url FROM watch_viewed_ids")
                 resp = self.mysql_cursor.fetchall()
             except pymysql.err.OperationalError:
                 self.mysql_connection.ping(True)
 
             else:
                 break
-        logger.debug('Viewed links received')
+        logger.debug('Viewed ids received')
         return [d[0] for d in resp]
 
-    def add_to_viewed_links(self, url: str):
-        logger.debug(f'Adding to viewed links - {url}')
+    def add_to_viewed_id(self, post_id: str):
+        logger.debug(f'Adding to viewed links - {post_id}')
         while True:
             try:
-                self.mysql_cursor.execute("INSERT INTO watch_viewed_links VALUES(%s)", (url,))
+                self.mysql_cursor.execute("INSERT INTO watch_viewed_ids VALUES(%s)", (post_id,))
                 self.mysql_connection.commit()
             except pymysql.err.OperationalError:
                 self.mysql_connection.ping(True)
@@ -56,7 +54,7 @@ class DataBaseHandler:
                 break
             else:
                 break
-        logger.debug('The url has been added to viewed links')
+        logger.debug('The id has been added to viewed links')
 
     def get_categories(self) -> List:
         self.mysql_connection.ping(True)
@@ -66,6 +64,7 @@ class DataBaseHandler:
         resp = self.mysql_cursor.fetchall()
         logger.debug('Categories received')
         return [d for d in resp]
+
 
 if __name__ == '__main__':
     db = DataBaseHandler()

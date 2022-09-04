@@ -17,13 +17,10 @@ def main():
             if offers_urls:
                 for offer_url in offers_urls:
                     try:
-                        offer = watch.get_offer(offer_url)
+                        watch.get_offers(offer_url)
                     except UnsuitableProductError:
                         logger.debug(f'Will be skipped - {offer_url}')
-                    else:
-                        telegram.send_offer(offer)
 
-                    db_handler.add_to_viewed_links(offer_url)
                     time.sleep(3)
             else:
                 time.sleep(5)

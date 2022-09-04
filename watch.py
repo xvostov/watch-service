@@ -7,6 +7,7 @@ from utils import stopwatch
 from loguru import logger
 from loader import db_handler
 import re
+import telegram
 
 class UnsuitableProductError(Exception):
     pass
@@ -37,65 +38,79 @@ class WatchScraper:
             for a in all_a:
                 urls_list.append('http://forum.watch.ru/' + a.get('href'))
 
-        viewed_links = db_handler.get_viewed_links()
-        for url in viewed_links:
-            if url in urls_list:
-                urls_list.remove(url)
+        # viewed_links = db_handler.get_viewed_links()
+
+        # for url in viewed_links:
+        #     if url in urls_list:
+        #         urls_list.remove(url)
 
         logger.debug(f'New urls found: {len(urls_list)}')
         return urls_list
 
     @stopwatch
-    def get_offer(self, url: str) -> Offer:
+    def get_offers(self, url: str):
         logger.debug(f'Parsing offer - {url}')
         content = self.req.get(url)
         soup = BeautifulSoup(content, 'lxml')
 
-        offer = Offer(url)
+        viewed_ids = db_handler.get_viewed_links()
 
-        message_body = soup.find_all('div', class_='messagebody')[0]
-
-        try:
-            offer.title = message_body.find('b').text.strip()
-        except AttributeError:
-            logger.warning(f'Title was not found: {offer.title}')
-        else:
-            logger.debug(f'Title was found: {offer.title}')
+        # offer = Offer(url)
+        page_title = soup.find('title').text.replace(' - Часовой форум Watch.ru', '')
+        all_posts = soup.find_all('td', {'id': re.compile(r'^td_post_')})
 
         try:
-            offer.price = re.search(r'цена:* [a-z0-9\s\.\$]*', message_body.text.lower()).group(0).strip()
-        except AttributeError:
-            logger.warning('Price was not found')
-            raise UnsuitableProductError
-        else:
-            logger.debug(f'Price was found: {offer.price}')
-
-        offer.description = message_body.text.replace('\n\n', '\n')
-        if len(offer.description) > 650:
-            offer.description = offer.description[:500]
-
-        logger.debug('Description was found')
-
-        try:
-            offer.photo = 'http://forum.watch.ru/' + soup.find_all('a', {'href': re.compile('attachmentid')})[0].get('href')
+            photo = 'http://forum.watch.ru/' + soup.find_all('a', {'href': re.compile('attachmentid')})[0].get(
+                'href')
         except IndexError:
             try:
-                offer.photo = soup.find_all('img', {'src': re.compile('\.jpg$')})[0].get('src')
-            except:
-                pass
+                photo = soup.find_all('img', {'src': re.compile('\.jpg$')})[0].get('src')
+            except Exception:
+                photo = None
 
             else:
                 logger.debug('Photo was found')
         else:
             logger.debug('Photo was found')
-        return offer
 
+        if photo:
+            if 'http' not in photo:
+                photo = 'http://forum.watch.ru/' + photo
+
+        for post in all_posts:
+            post_id = post.get('id').replace('td_post_', '')
+            if post_id not in viewed_ids:
+                offer = Offer(url)
+
+                # Поиск цены
+                try:
+                    offer.price = re.search(r'цена:\s[a-z0-9\s\.\$]*', post.text.lower()).group(0).strip()
+                except AttributeError:
+                    logger.debug('Price was not found')
+
+                else:
+                    logger.debug(f'Price was found: {offer.price}')
+
+                # Описание
+                offer.description = post.text.replace('\n\n', '\n')
+                if len(offer.description) > 650:
+                    offer.description = offer.description[:650]
+
+                if photo:
+                    offer.photo = photo
+
+                try:
+                    telegram.send_offer(offer)
+                except Exception:
+                    pass
+                else:
+                    db_handler.add_to_viewed_id(post_id)
 
 def main():
     watch = WatchScraper()
     urls_list = watch.get_offers_urls('http://forum.watch.ru/forumdisplay.php?f=192&order=desc')
     for url in urls_list:
-        offer = watch.get_offer(url)
+        offer = watch.get_offers(url)
         print(offer.__dict__)
 
 if __name__ == '__main__':

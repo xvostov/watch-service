@@ -142,3 +142,6 @@ cython_debug/
 .idea
 *.log
 !/test_env.py
+!/Dockerfile
+!/docker-compose.yml
+!/test_parser.py
